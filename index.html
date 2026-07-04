@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <!-- Custom PreHead code is injected here -->
-
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -12,13 +11,11 @@
     <meta charset="utf-8" />
 
     <!-- Builtin injector for disabling cache -->
-    <meta http-equiv="pragma" content="no-cache" />
 
     <!-- Set the title bar of the page -->
     <title>Pixel Game</title>
 
     <!-- Custom PreStyle code is injected here -->
-
 
     <!-- Set the background colour of the document -->
     <style>
@@ -29,16 +26,25 @@
             margin: 0px;
             padding: 0px;
             border: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed; /* iOSでのバウンススクロール防止 */
+            touch-action: none;
+            -webkit-text-size-adjust: none;
         }
 
         canvas {
-            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
             -webkit-interpolation-mode: nearest-neighbor;
-            -ms-touch-action: none;
+            display: block;
+            margin: 0 auto;
             touch-action: none;
-            margin: 0px;
-            padding: 0px;
-            border: 0px;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         :-webkit-full-screen #canvas {
@@ -56,35 +62,74 @@
             margin: 0px;
             padding: 0px;
             border: 0px;
+            width: 100%;
+            height: 100%;
         }
 
-        div.gm4html5_login {
-            padding: 20px;
-            position: absolute;
-            border: solid 2px #000000;
-            background-color: #404040;
-            color: #00ff00;
-            border-radius: 15px;
-            box-shadow: #101010 20px 20px 40px;
+        /* 1-bit retro styled Fullscreen Toggle Button */
+        #fullscreen-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            background: transparent;
+            border: none;
+            box-sizing: border-box;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0.5;
+            transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+            user-select: none;
+            -webkit-user-select: none;
+            outline: none;
+            margin-top: env(safe-area-inset-top, 0px);
+            margin-right: env(safe-area-inset-right, 0px);
         }
 
-        div.gm4html5_cancel_button {
-            float: right;
+        #fullscreen-btn .fs-icon {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 2.5px;
+            stroke-linecap: square;
         }
 
-        div.gm4html5_login_button {
-            float: left;
+        @media (hover: hover) {
+            #fullscreen-btn:hover {
+                opacity: 1.0;
+                transform: scale(1.1);
+            }
         }
 
-        div.gm4html5_login_header {
-            text-align: center;
+        #fullscreen-btn:active {
+            transform: scale(0.9);
+            opacity: 0.8;
         }
 
-        /* END - Custom Runner Styles */
+        /* Fullscreen-specific hover states: invisible by default, 50% opacity on hover */
+        #fullscreen-btn.is-fullscreen {
+            opacity: 0;
+        }
+
+        @media (hover: hover) {
+            #fullscreen-btn.is-fullscreen:hover {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+        }
+
+        #fullscreen-btn.is-fullscreen:active {
+            transform: scale(0.9);
+            opacity: 0.4;
+        }
     </style>
 
     <!-- Custom PostStyle code is injected here -->
-
 
     <!-- Builtin injector for injecting flurry analytics code -->
 
@@ -92,33 +137,95 @@
 
 <!-- Custom PostHead code is injected here -->
 
-
 <!-- Custom PreBody code is injected here -->
 
-
 <body>
+    <!-- Fullscreen Toggle Button -->
+    <div id="fullscreen-btn" onclick="toggleFullscreen()" title="全画面表示の切り替え">
+        <svg class="fs-icon" viewBox="0 0 24 24">
+            <path d="M 5,9 L 5,5 L 9,5 M 19,9 L 19,5 L 15,5 M 5,15 L 5,19 L 9,19 M 19,15 L 19,19 L 15,19" />
+        </svg>
+    </div>
+
     <div class="gm4html5_div_class" id="gm4html5_div_id">
 
         <!-- Builtin injector for splash screen -->
 
-
         <!-- Create the canvas element the game draws to -->
-        <canvas id="canvas" width="1366" height="768">
+        <canvas id="canvas" width="720" height="816">
             <p>Your browser doesn't support HTML5 canvas.</p>
         </canvas>
     </div>
 
     <!-- Run the game code -->
-    <script type="text/javascript" src="html5game/Rokujo_Hitoma_Proto.js?cachebust=999510445"></script>
+    <script type="text/javascript" src="html5game/Rokujo_Hitoma_Proto.js"></script>
 
     <!-- Builtin injector for injecting runner path -->
-
 
     <script>window.onload = GameMaker_Init;</script>
 
     <!-- Builtin injector for injecting google analytics code -->
 
+    <!-- Custom PostBody code is injected here -->
 
+    <script>
+        // スマホブラウザ特有の「画面引っ張り（バウンススクロール・プルリフレッシュ）」およびダブルタップズームを完全防止
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length <= 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // --- HTML5 Fullscreen API Logic ---
+        function toggleFullscreen() {
+            var doc = document.documentElement;
+            var isFull = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            
+            if (!isFull) {
+                var requestFS = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
+                if (requestFS) {
+                    requestFS.call(doc).catch(function(err) {
+                        console.warn("Fullscreen request rejected: ", err);
+                    });
+                }
+            } else {
+                var exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                if (exitFS) {
+                    exitFS.call(document);
+                }
+            }
+        }
+
+        function updateFullscreenButton() {
+            var btn = document.getElementById("fullscreen-btn");
+            var isFull = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (btn) {
+                if (isFull) {
+                    btn.classList.add("is-fullscreen");
+                    btn.innerHTML = '<svg class="fs-icon" viewBox="0 0 24 24"><path d="M 9,5 L 9,9 L 5,9 M 15,5 L 15,9 L 19,9 M 9,19 L 9,15 L 5,15 M 15,19 L 15,15 L 19,15" /></svg>';
+                } else {
+                    btn.classList.remove("is-fullscreen");
+                    btn.innerHTML = '<svg class="fs-icon" viewBox="0 0 24 24"><path d="M 5,9 L 5,5 L 9,5 M 19,9 L 19,5 L 15,5 M 5,15 L 5,19 L 9,19 M 19,15 L 19,19 L 15,19" /></svg>';
+                }
+            }
+        }
+
+        // Listen for standard browser fullscreen state change events
+        document.addEventListener("fullscreenchange", updateFullscreenButton);
+        document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+        document.addEventListener("mozfullscreenchange", updateFullscreenButton);
+        document.addEventListener("MSFullscreenChange", updateFullscreenButton);
+
+        // Capability Detection: Hide button if Fullscreen API is completely unsupported (e.g. iPhone Safari)
+        (function() {
+            var doc = document.documentElement;
+            var hasFullscreenSupport = !!(doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen);
+            if (!hasFullscreenSupport) {
+                var btn = document.getElementById("fullscreen-btn");
+                if (btn) btn.style.display = "none";
+            }
+        })();
+    </script>
 </body>
 
 <!-- Custom PostBody code is injected here -->
